@@ -37,13 +37,9 @@ void capitalize(char *str)
     for (int i = 0; str[i] != '\0'; ++i)
     {
         if (i == 0 || str[i - 1] == ' ')
-        {
             str[i] = std::toupper(str[i]);
-        }
         else
-        {
             str[i] = std::tolower(str[i]);
-        }
     }
 }
 
@@ -82,11 +78,11 @@ void showCarList(fstream &data)
     for (int i = 1; i <= size; i++)
     {
         showCar = readData(data, i);
-        cout << i << ". Registration Number: " << showCar.regNumber << endl;
+        cout << i << ". Reg Number\t: " << showCar.regNumber << endl;
         cout << "   - Brand \t: " << showCar.brand << endl;
         cout << "   - Model \t: " << showCar.model << endl;
         cout << "   - Year \t: " << showCar.year << endl;
-        cout << "   - Rent Fee \t: " << showCar.rentFee << endl;
+        cout << "   - Rent Fee \t: Rp" << showCar.rentFee << endl;
         cout << "   - Status \t: " << showCar.status << endl;
     }
     cin.get();
@@ -111,7 +107,7 @@ void addCarList(fstream &data)
     capitalize(newCar.model);
     cout << "year: ";
     cin >> newCar.year;
-    cout << "Rent Fee: ";
+    cout << "Rent Fee: Rp";
     cin >> newCar.rentFee;
     strncpy(newCar.status, "Not Rented", MAX_STRING_LENGTH);
     newCar.customerId = 0;
@@ -119,6 +115,7 @@ void addCarList(fstream &data)
     newCar.rentDuration = 0;
 
     writeData(data, size + 1, newCar);
+    cout << "Car added successfully!" << endl;
     cin.ignore();
     cin.get();
 }
@@ -308,7 +305,7 @@ void editCarList(fstream &data)
         cout << "- Brand: " << showCar.brand << endl;
         cout << "- Model: " << showCar.model << endl;
         cout << "- Year: " << showCar.year << endl;
-        cout << "- Rent Fee (/day): " << showCar.rentFee << endl;
+        cout << "- Rent Fee (/day): Rp" << showCar.rentFee << endl;
         cout << "- Status: " << showCar.status << endl;
 
         cin.get();
