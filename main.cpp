@@ -244,50 +244,71 @@ void editCarList(fstream &data)
 void removeCarList(fstream &data)
 {
     system("cls");
-    fstream temp;
-    temp.open("temp.bin", ios::out | ios::binary);
-    if (temp.is_open())
+
+    int size = getDataSize(data);
+    cout << BG_WHITE << BLACK << "================== REMOVE CAR ==================" << RESET << endl;
+
+    char regNumber[MAX_STRING_LENGTH];
+    cout << "Registration Number: ";
+    cin >> regNumber;
+    toUpper(regNumber);
+    cin.ignore();
+    int pos = findPos(data, regNumber);
+
+    if (pos >= 0)
     {
-        int size = getDataSize(data);
-        cout << BG_WHITE << BLACK << "================== Remove CAR ==================" << RESET << endl;
+        CarRentData showCar = readData(data, pos);
+        system("cls");
+        cout << BG_BLUE << WHITE "=================== CAR DATA ===================" << RESET << endl;
+        cout << "- Reg. Number\t\t: " << showCar.regNumber << endl;
+        cout << "- Brand\t\t\t: " << showCar.brand << endl;
+        cout << "- Model\t\t\t: " << showCar.model << endl;
+        cout << "- Year\t\t\t: " << showCar.year << endl;
+        cout << "- Rent Fee (/day)\t: Rp" << showCar.rentFee << endl;
+        cout << "- Status\t\t: " << showCar.status << endl;
 
-        char regNumber[MAX_STRING_LENGTH];
-        cout << "Registration Number: ";
-        cin >> regNumber;
-        toUpper(regNumber);
-        cin.ignore();
-        bool found = false;
-        for (int i = 1; i <= size; i++)
+        char confirm;
+        cout << "================================================" << endl;
+        cout << "Remove this car? (y/n): ";
+        cin >> confirm;
+        if (confirm == 'y' || confirm == 'Y')
         {
-            CarRentData car = readData(data, i);
-            if (strcmp(car.regNumber, regNumber) == 0)
-                found = true;
-            else
-                temp.write(reinterpret_cast<char *>(&car), sizeof(CarRentData));
-        }
+            fstream temp;
+            temp.open("temp.bin", ios::out | ios::binary);
 
-        if (found)
-        {
+            if (!temp.is_open())
+            {
+                cout << RED << ITALIC << "Error when creating temporary file" << RESET << endl;
+                cout << GRAY << ITALIC << "Please try again!" << RESET << endl;
+
+                cin.get();
+                return;
+            }
+
+            for (int i = 1; i <= size; i++)
+            {
+                CarRentData car = readData(data, i);
+                if (i != pos)
+                    temp.write(reinterpret_cast<char *>(&car), sizeof(CarRentData));
+            }
+
             data.close();
             remove(CARS_DATA_FILE);
             temp.close();
             rename("temp.bin", CARS_DATA_FILE);
             cout << GREEN << ITALIC << "Car " << regNumber << " successfully removed!" << RESET << endl;
-            cin.get();
             data.open(CARS_DATA_FILE, ios::out | ios::in | ios::binary);
         }
         else
         {
-            cout << RED << ITALIC << "Car not found!" << RESET << endl;
-            temp.close();
-            remove("temp.bin");
-            cin.get();
+            cout << RED << ITALIC << "Car remove cancelled!" << RESET << endl;
         }
+        cin.ignore();
+        cin.get();
     }
     else
     {
-        cout << RED << ITALIC << "Error when creating temporary file" << RESET << endl;
-        cout << GRAY << ITALIC << "Please try again!" << RESET << endl;
+        cout << RED << ITALIC << "Car not found!" << RESET << endl;
         cin.get();
     }
 }
@@ -298,7 +319,7 @@ void rentCar(fstream &data)
     int size = getDataSize(data);
     CarRentData rentCar;
 
-    cout << BG_WHITE << BLACK <<"=================== RENT CAR ===================" << RESET << endl;
+    cout << BG_WHITE << BLACK << "=================== RENT CAR ===================" << RESET << endl;
 
     char regNumber[MAX_STRING_LENGTH];
     cout << "Registration Number\t: ";
