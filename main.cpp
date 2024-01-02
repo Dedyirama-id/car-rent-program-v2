@@ -28,22 +28,22 @@ struct CarRentData
     time_t rentDate;
 };
 
-CarRentData readData(fstream &data, int posisi);
+CarRentData readData(std::fstream &data, int posisi);
+void showCarList(std::fstream &data);
+void addCarList(std::fstream &data);
+void editCarList(std::fstream &data);
+void removeCarList(std::fstream &data);
+void rentCar(std::fstream &data);
+void returnCar(std::fstream &data);
+int getDataSize(std::fstream &data);
+void writeData(std::fstream &data, int posisi, CarRentData &inputCar);
+int getChoice();
+void checkDatabase(std::fstream &data);
+void updateHistory(CarRentData &car, char time[], std::string action);
+void makeInvoice(std::fstream &data, CarRentData &car, std::string mode, time_t returnDate = 0);
+int findPos(std::fstream &data, char regNumber[]);
 void toUpper(char *str);
 void capitalize(char *str);
-void writeData(fstream &data, int posisi, CarRentData &inputCar);
-int getDataSize(fstream &data);
-void showCarList(fstream &data);
-void addCarList(fstream &data);
-void removeCarList(fstream &data);
-int findPos(fstream &data, char regNumber[]);
-void rentCar(fstream &data);
-void returnCar(fstream &data);
-void editCarList(fstream &data);
-void makeInvoice(fstream &data, CarRentData &car, string mode, time_t returnDate = 0);
-void updateHistory(CarRentData &car, char time[], string action);
-int getChoice();
-void checkDatabase(fstream &data);
 
 int main()
 {
@@ -85,47 +85,12 @@ int main()
     return 0;
 }
 
-void toUpper(char *str)
-{
-    for (int i = 0; str[i] != '\0'; ++i)
-    {
-        str[i] = toupper(str[i]);
-    }
-}
-
-void capitalize(char *str)
-{
-    for (int i = 0; str[i] != '\0'; ++i)
-    {
-        if (i == 0 || str[i - 1] == ' ')
-            str[i] = std::toupper(str[i]);
-        else
-            str[i] = std::tolower(str[i]);
-    }
-}
-
 CarRentData readData(fstream &data, int posisi)
 {
     CarRentData readCar;
     data.seekg((posisi - 1) * sizeof(CarRentData), ios::beg);
     data.read(reinterpret_cast<char *>(&readCar), sizeof(CarRentData));
     return readCar;
-}
-
-void writeData(fstream &data, int posisi, CarRentData &inputCar)
-{
-    data.seekp((posisi - 1) * sizeof(CarRentData), ios::beg);
-    data.write(reinterpret_cast<char *>(&inputCar), sizeof(CarRentData));
-}
-
-int getDataSize(fstream &data)
-{
-    int start, end;
-    data.seekg(0, ios::beg);
-    start = data.tellg();
-    data.seekg(0, ios::end);
-    end = data.tellg();
-    return (end - start) / sizeof(CarRentData);
 }
 
 void showCarList(fstream &data)
@@ -147,6 +112,12 @@ void showCarList(fstream &data)
         cout << "   - Status \t: " << showCar.status << endl;
     }
     cin.get();
+}
+
+void writeData(fstream &data, int posisi, CarRentData &inputCar)
+{
+    data.seekp((posisi - 1) * sizeof(CarRentData), ios::beg);
+    data.write(reinterpret_cast<char *>(&inputCar), sizeof(CarRentData));
 }
 
 void addCarList(fstream &data)
@@ -178,6 +149,83 @@ void addCarList(fstream &data)
 
     writeData(data, size + 1, newCar);
     cout << "Car added successfully!" << endl;
+    cin.ignore();
+    cin.get();
+}
+
+void editCarList(fstream &data)
+{
+    system("cls");
+    int size = getDataSize(data);
+
+    cout << "[Edit Car]" << endl;
+    cout << "Registration Number: ";
+    char regNumber[MAX_STRING_LENGTH];
+    cin >> regNumber;
+    toUpper(regNumber);
+
+    int pos = findPos(data, regNumber);
+    if (pos >= 0)
+    {
+        CarRentData showCar = readData(data, pos);
+        if (showCar.status == "Not Rented")
+        {
+            system("cls");
+
+            cout << "[Car Data]" << endl;
+            cout << "- Registration Number: " << showCar.regNumber << endl;
+            cout << "- Brand: " << showCar.brand << endl;
+            cout << "- Model: " << showCar.model << endl;
+            cout << "- Year: " << showCar.year << endl;
+            cout << "- Rent Fee (/day): Rp" << showCar.rentFee << endl;
+            cout << "- Status: " << showCar.status << endl;
+
+            cin.get();
+            CarRentData newCar;
+            cout << "\n[New Car Data]" << endl;
+            cout << "(leave empty if you don't want to change)" << endl;
+            cout << "- Registration Number: ";
+            cin.getline(newCar.regNumber, MAX_STRING_LENGTH);
+            if (strlen(newCar.regNumber) == 0)
+                strcpy(newCar.regNumber, showCar.regNumber);
+
+            cout << "- Brand: ";
+            cin.getline(newCar.brand, MAX_STRING_LENGTH);
+            if (strlen(newCar.brand) == 0)
+                strcpy(newCar.brand, showCar.brand);
+
+            cout << "- Model: ";
+            cin.getline(newCar.model, MAX_STRING_LENGTH);
+            if (strlen(newCar.model) == 0)
+                strcpy(newCar.model, showCar.model);
+
+            char buffer[MAX_STRING_LENGTH];
+            cout << "- Year: ";
+            cin.getline(buffer, MAX_STRING_LENGTH);
+            newCar.year = (strlen(buffer) == 0) ? showCar.year : (int)atoi(buffer);
+
+            cout << "- Rent Fee (/day): ";
+            cin.getline(buffer, MAX_STRING_LENGTH);
+            newCar.rentFee = (strlen(buffer) == 0) ? showCar.rentFee : (int)atoi(buffer);
+
+            strncpy(newCar.status, showCar.status, MAX_STRING_LENGTH);
+            newCar.customerId = showCar.customerId;
+            strncpy(newCar.customerName, showCar.customerName, MAX_STRING_LENGTH);
+            newCar.rentDuration = showCar.rentDuration;
+            newCar.rentDate = showCar.rentDate;
+
+            writeData(data, pos, newCar);
+            cout << "Car " << regNumber << " successfully updated!" << endl;
+        }
+        else
+        {
+            cout << "Cannot change the data of active rented car!" << endl;
+        }
+    }
+    else
+    {
+        cout << "Car not found!" << endl;
+    }
     cin.ignore();
     cin.get();
 }
@@ -229,60 +277,6 @@ void removeCarList(fstream &data)
         cout << "Error when creating temporary file" << endl;
         cout << "Please try again!" << endl;
         cin.get();
-    }
-}
-
-int findPos(fstream &data, char regNumber[])
-{
-    int size = getDataSize(data);
-    for (int i = 1; i <= size; i++)
-    {
-        CarRentData car = readData(data, i);
-        if (strcmp(car.regNumber, regNumber) == 0)
-        {
-            return i;
-        }
-    }
-    return -1;
-}
-
-void makeInvoice(fstream &data, CarRentData &car, string mode, time_t returnDate)
-{
-    system("cls");
-    if (mode == "rent")
-    {
-        cout << "================================================" << endl;
-        cout << "                CAR RENT INVOICE                " << endl;
-        cout << "================================================" << endl;
-        cout << "Customer\t: " << car.customerName << endl;
-        cout << "Customer ID\t: " << car.customerId << endl;
-        cout << "Reg. Number\t: " << car.regNumber << endl;
-        cout << "Brand\t\t: " << car.brand << endl;
-        cout << "Model\t\t: " << car.model << endl;
-        cout << "Rent Fee\t: Rp" << car.rentFee << " /day" << endl;
-        cout << "Rent Duration\t: " << car.rentDuration << " days" << endl;
-        cout << "================================================" << endl;
-    }
-    else if (mode == "return")
-    {
-        tm *rentDate = localtime(&car.rentDate);
-        char sRentDate[80];
-        strftime(sRentDate, sizeof(sRentDate), "%Y-%m-%d %H:%M:%S", rentDate);
-
-        char sReturnDate[80];
-        strftime(sReturnDate, sizeof(sReturnDate), "%Y-%m-%d %H:%M:%S", localtime(&returnDate));
-
-        cout << "================================================" << endl;
-        cout << "                CAR RETURN INVOICE               " << endl;
-        cout << "================================================" << endl;
-        cout << "Customer\t: " << car.customerName << endl;
-        cout << "Customer ID\t: " << car.customerId << endl;
-        cout << "Reg. Number\t: " << car.regNumber << endl;
-        cout << "Brand\t\t: " << car.brand << endl;
-        cout << "Model\t\t: " << car.model << endl;
-        cout << "Rent Date\t: " << sRentDate << endl;
-        cout << "Return Date\t: " << sReturnDate << endl;
-        cout << "================================================" << endl;
     }
 }
 
@@ -482,83 +476,6 @@ void returnCar(fstream &data)
     }
 }
 
-void editCarList(fstream &data)
-{
-    system("cls");
-    int size = getDataSize(data);
-
-    cout << "[Edit Car]" << endl;
-    cout << "Registration Number: ";
-    char regNumber[MAX_STRING_LENGTH];
-    cin >> regNumber;
-    toUpper(regNumber);
-
-    int pos = findPos(data, regNumber);
-    if (pos >= 0)
-    {
-        CarRentData showCar = readData(data, pos);
-        if (showCar.status == "Not Rented")
-        {
-            system("cls");
-
-            cout << "[Car Data]" << endl;
-            cout << "- Registration Number: " << showCar.regNumber << endl;
-            cout << "- Brand: " << showCar.brand << endl;
-            cout << "- Model: " << showCar.model << endl;
-            cout << "- Year: " << showCar.year << endl;
-            cout << "- Rent Fee (/day): Rp" << showCar.rentFee << endl;
-            cout << "- Status: " << showCar.status << endl;
-
-            cin.get();
-            CarRentData newCar;
-            cout << "\n[New Car Data]" << endl;
-            cout << "(leave empty if you don't want to change)" << endl;
-            cout << "- Registration Number: ";
-            cin.getline(newCar.regNumber, MAX_STRING_LENGTH);
-            if (strlen(newCar.regNumber) == 0)
-                strcpy(newCar.regNumber, showCar.regNumber);
-
-            cout << "- Brand: ";
-            cin.getline(newCar.brand, MAX_STRING_LENGTH);
-            if (strlen(newCar.brand) == 0)
-                strcpy(newCar.brand, showCar.brand);
-
-            cout << "- Model: ";
-            cin.getline(newCar.model, MAX_STRING_LENGTH);
-            if (strlen(newCar.model) == 0)
-                strcpy(newCar.model, showCar.model);
-
-            char buffer[MAX_STRING_LENGTH];
-            cout << "- Year: ";
-            cin.getline(buffer, MAX_STRING_LENGTH);
-            newCar.year = (strlen(buffer) == 0) ? showCar.year : (int)atoi(buffer);
-
-            cout << "- Rent Fee (/day): ";
-            cin.getline(buffer, MAX_STRING_LENGTH);
-            newCar.rentFee = (strlen(buffer) == 0) ? showCar.rentFee : (int)atoi(buffer);
-
-            strncpy(newCar.status, showCar.status, MAX_STRING_LENGTH);
-            newCar.customerId = showCar.customerId;
-            strncpy(newCar.customerName, showCar.customerName, MAX_STRING_LENGTH);
-            newCar.rentDuration = showCar.rentDuration;
-            newCar.rentDate = showCar.rentDate;
-
-            writeData(data, pos, newCar);
-            cout << "Car " << regNumber << " successfully updated!" << endl;
-        }
-        else
-        {
-            cout << "Cannot change the data of active rented car!" << endl;
-        }
-    }
-    else
-    {
-        cout << "Car not found!" << endl;
-    }
-    cin.ignore();
-    cin.get();
-}
-
 int getChoice()
 {
     cout << "[Car Rent Services]" << endl;
@@ -573,17 +490,6 @@ int getChoice()
     cin >> input;
     cin.ignore();
     return input;
-}
-
-void updateHistory (CarRentData &car, char time[], string action) {
-    ofstream history;
-    history.open(HISTORY_FILE, ios::out | ios::app);
-    if (!history.is_open()) {
-        history.close();
-        history.open(HISTORY_FILE, ios::trunc | ios::out | ios::app);
-    }
-
-    history << time << '\t' << action << '\t' << car.regNumber << '\t' << car.customerName << '\t' << car.customerId << endl;
 }
 
 void checkDatabase(fstream &data)
@@ -602,4 +508,98 @@ void checkDatabase(fstream &data)
     }
     cout << "[enter] to continue! ";
     cin.get();
+}
+
+void updateHistory (CarRentData &car, char time[], string action) {
+    ofstream history;
+    history.open(HISTORY_FILE, ios::out | ios::app);
+    if (!history.is_open()) {
+        history.close();
+        history.open(HISTORY_FILE, ios::trunc | ios::out | ios::app);
+    }
+
+    history << time << '\t' << action << '\t' << car.regNumber << '\t' << car.customerName << '\t' << car.customerId << endl;
+}
+
+void toUpper(char *str)
+{
+    for (int i = 0; str[i] != '\0'; ++i)
+    {
+        str[i] = toupper(str[i]);
+    }
+}
+
+void capitalize(char *str)
+{
+    for (int i = 0; str[i] != '\0'; ++i)
+    {
+        if (i == 0 || str[i - 1] == ' ')
+            str[i] = std::toupper(str[i]);
+        else
+            str[i] = std::tolower(str[i]);
+    }
+}
+
+int getDataSize(fstream &data)
+{
+    int start, end;
+    data.seekg(0, ios::beg);
+    start = data.tellg();
+    data.seekg(0, ios::end);
+    end = data.tellg();
+    return (end - start) / sizeof(CarRentData);
+}
+
+int findPos(fstream &data, char regNumber[])
+{
+    int size = getDataSize(data);
+    for (int i = 1; i <= size; i++)
+    {
+        CarRentData car = readData(data, i);
+        if (strcmp(car.regNumber, regNumber) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void makeInvoice(fstream &data, CarRentData &car, string mode, time_t returnDate)
+{
+    system("cls");
+    if (mode == "rent")
+    {
+        cout << "================================================" << endl;
+        cout << "                CAR RENT INVOICE                " << endl;
+        cout << "================================================" << endl;
+        cout << "Customer\t: " << car.customerName << endl;
+        cout << "Customer ID\t: " << car.customerId << endl;
+        cout << "Reg. Number\t: " << car.regNumber << endl;
+        cout << "Brand\t\t: " << car.brand << endl;
+        cout << "Model\t\t: " << car.model << endl;
+        cout << "Rent Fee\t: Rp" << car.rentFee << " /day" << endl;
+        cout << "Rent Duration\t: " << car.rentDuration << " days" << endl;
+        cout << "================================================" << endl;
+    }
+    else if (mode == "return")
+    {
+        tm *rentDate = localtime(&car.rentDate);
+        char sRentDate[80];
+        strftime(sRentDate, sizeof(sRentDate), "%Y-%m-%d %H:%M:%S", rentDate);
+
+        char sReturnDate[80];
+        strftime(sReturnDate, sizeof(sReturnDate), "%Y-%m-%d %H:%M:%S", localtime(&returnDate));
+
+        cout << "================================================" << endl;
+        cout << "                CAR RETURN INVOICE               " << endl;
+        cout << "================================================" << endl;
+        cout << "Customer\t: " << car.customerName << endl;
+        cout << "Customer ID\t: " << car.customerId << endl;
+        cout << "Reg. Number\t: " << car.regNumber << endl;
+        cout << "Brand\t\t: " << car.brand << endl;
+        cout << "Model\t\t: " << car.model << endl;
+        cout << "Rent Date\t: " << sRentDate << endl;
+        cout << "Return Date\t: " << sReturnDate << endl;
+        cout << "================================================" << endl;
+    }
 }
