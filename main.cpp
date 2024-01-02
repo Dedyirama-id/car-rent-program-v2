@@ -450,58 +450,64 @@ void editCarList(fstream &data)
     int pos = findPos(data, regNumber);
     if (pos >= 0)
     {
-        system("cls");
-
         CarRentData showCar = readData(data, pos);
-        cout << "[Car Data]" << endl;
-        cout << "- Registration Number: " << showCar.regNumber << endl;
-        cout << "- Brand: " << showCar.brand << endl;
-        cout << "- Model: " << showCar.model << endl;
-        cout << "- Year: " << showCar.year << endl;
-        cout << "- Rent Fee (/day): Rp" << showCar.rentFee << endl;
-        cout << "- Status: " << showCar.status << endl;
+        if (showCar.status == "Not Rented")
+        {
+            system("cls");
 
-        cin.get();
-        CarRentData newCar;
-        cout << "\n[New Car Data]" << endl;
-        cout << "(leave empty if you don't want to change)" << endl;
-        cout << "- Registration Number: ";
-        cin.getline(newCar.regNumber, MAX_STRING_LENGTH);
-        if (strlen(newCar.regNumber) == 0)
-            strcpy(newCar.regNumber, showCar.regNumber);
+            cout << "[Car Data]" << endl;
+            cout << "- Registration Number: " << showCar.regNumber << endl;
+            cout << "- Brand: " << showCar.brand << endl;
+            cout << "- Model: " << showCar.model << endl;
+            cout << "- Year: " << showCar.year << endl;
+            cout << "- Rent Fee (/day): Rp" << showCar.rentFee << endl;
+            cout << "- Status: " << showCar.status << endl;
 
-        cout << "- Brand: ";
-        cin.getline(newCar.brand, MAX_STRING_LENGTH);
-        if (strlen(newCar.brand) == 0)
-            strcpy(newCar.brand, showCar.brand);
+            cin.get();
+            CarRentData newCar;
+            cout << "\n[New Car Data]" << endl;
+            cout << "(leave empty if you don't want to change)" << endl;
+            cout << "- Registration Number: ";
+            cin.getline(newCar.regNumber, MAX_STRING_LENGTH);
+            if (strlen(newCar.regNumber) == 0)
+                strcpy(newCar.regNumber, showCar.regNumber);
 
-        cout << "- Model: ";
-        cin.getline(newCar.model, MAX_STRING_LENGTH);
-        if (strlen(newCar.model) == 0)
-            strcpy(newCar.model, showCar.model);
+            cout << "- Brand: ";
+            cin.getline(newCar.brand, MAX_STRING_LENGTH);
+            if (strlen(newCar.brand) == 0)
+                strcpy(newCar.brand, showCar.brand);
 
-        char buffer[MAX_STRING_LENGTH];
-        cout << "- Year: ";
-        cin.getline(buffer, MAX_STRING_LENGTH);
-        newCar.year = (strlen(buffer) == 0) ? showCar.year : (int)atoi(buffer);
+            cout << "- Model: ";
+            cin.getline(newCar.model, MAX_STRING_LENGTH);
+            if (strlen(newCar.model) == 0)
+                strcpy(newCar.model, showCar.model);
 
-        cout << "- Rent Fee (/day): ";
-        cin.getline(buffer, MAX_STRING_LENGTH);
-        newCar.rentFee = (strlen(buffer) == 0) ? showCar.rentFee : (int)atoi(buffer);
+            char buffer[MAX_STRING_LENGTH];
+            cout << "- Year: ";
+            cin.getline(buffer, MAX_STRING_LENGTH);
+            newCar.year = (strlen(buffer) == 0) ? showCar.year : (int)atoi(buffer);
 
-        strncpy(newCar.status, showCar.status, MAX_STRING_LENGTH);
-        newCar.customerId = showCar.customerId;
-        strncpy(newCar.customerName, showCar.customerName, MAX_STRING_LENGTH);
-        newCar.rentDuration = showCar.rentDuration;
-        newCar.rentDate = showCar.rentDate;
+            cout << "- Rent Fee (/day): ";
+            cin.getline(buffer, MAX_STRING_LENGTH);
+            newCar.rentFee = (strlen(buffer) == 0) ? showCar.rentFee : (int)atoi(buffer);
 
-        writeData(data, pos, newCar);
-        cout << "Car " << regNumber << " successfully updated!" << endl;
+            strncpy(newCar.status, showCar.status, MAX_STRING_LENGTH);
+            newCar.customerId = showCar.customerId;
+            strncpy(newCar.customerName, showCar.customerName, MAX_STRING_LENGTH);
+            newCar.rentDuration = showCar.rentDuration;
+            newCar.rentDate = showCar.rentDate;
+
+            writeData(data, pos, newCar);
+            cout << "Car " << regNumber << " successfully updated!" << endl; 
+        } else {
+            cout << "Cannot change the data of active rented car!" << endl;
+        }
     }
     else
     {
         cout << "Car not found!" << endl;
     }
+    cin.ignore();
     cin.get();
 }
 
@@ -523,15 +529,18 @@ int getChoice()
 
 void checkDatabase(fstream &data)
 {
+    system("cls");
     data.open(CARS_DATA_FILE, ios::out | ios::in | ios::binary);
     if (data.is_open())
     {
-        cout << "database ditemukan" << endl;
+        cout << "Database found!" << endl;
     }
     else
     {
-        cout << "database tidak ditemukan, membuat database baru!" << endl;
+        cout << "Database not found! Creating new one..." << endl;
         data.close();
         data.open(CARS_DATA_FILE, ios::trunc | ios::out | ios::in | ios::binary);
     }
+    cout << "[enter] to continue! ";
+    cin.get();
 }
