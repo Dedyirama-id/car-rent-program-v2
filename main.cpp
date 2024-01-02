@@ -6,7 +6,8 @@
 
 using namespace std;
 
-#define dataFileName "cars-data.bin"
+#define CARS_DATA_FILE "cars-data.bin"
+#define RENT_DATA_FILE "rent-data.bin"
 
 const int MAX_STRING_LENGTH = 50;
 
@@ -122,6 +123,169 @@ void addCarList(fstream &data)
     cin.get();
 }
 
+void removeCarList(fstream &data)
+{
+    system("cls");
+    fstream temp;
+    temp.open("temp.bin", ios::out | ios::binary);
+    if (temp.is_open())
+    {
+        int size = getDataSize(data);
+        cout << "[Remove Car]" << endl;
+        char regNumber[MAX_STRING_LENGTH];
+        cout << "Registration Number: ";
+        cin >> regNumber;
+        toUpper(regNumber);
+        cin.ignore();
+        bool found = false;
+        for (int i = 1; i <= size; i++)
+        {
+            CarRentData car = readData(data, i);
+            if (strcmp(car.regNumber, regNumber) == 0)
+                found = true;
+            else
+                temp.write(reinterpret_cast<char *>(&car), sizeof(CarRentData));
+        }
+
+        if (found)
+        {
+            data.close();
+            remove(CARS_DATA_FILE);
+            temp.close();
+            rename("temp.bin", CARS_DATA_FILE);
+            cout << "Car " << regNumber << " has been removed!" << endl;
+            cin.get();
+            data.open(CARS_DATA_FILE, ios::out | ios::in | ios::binary);
+        }
+        else
+        {
+            cout << "Car not found!" << endl;
+            temp.close();
+            remove("temp.bin");
+            cin.get();
+        }
+    }
+    else
+    {
+        cout << "Error when creating temporary file" << endl;
+        cout << "Please try again!" << endl;
+        cin.get();
+    }
+}
+
+int findPos(fstream &data, char regNumber[])
+{
+    int size = getDataSize(data);
+    for (int i = 1; i <= size; i++)
+    {
+        CarRentData car = readData(data, i);
+        if (strcmp(car.regNumber, regNumber) == 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void rentCar(fstream &data)
+{
+    system("cls");
+    int size = getDataSize(data);
+    CarRentData rentCar;
+
+    cout << "[Rent Car]" << endl;
+    char regNumber[MAX_STRING_LENGTH];
+    cout << "Registration Number: ";
+    cin >> regNumber;
+    toUpper(regNumber);
+
+    int pos = findPos(data, regNumber);
+    cin.ignore();
+    if (pos >= 0)
+    {
+        rentCar = readData(data, pos);
+        if (strcmp(rentCar.status, "Not Rented") == 0)
+        {
+            cout << "Customer Id: ";
+            cin >> rentCar.customerId;
+            cout << "Customer Name: ";
+            cin >> rentCar.customerName;
+            cout << "Rent Duration (days): ";
+            cin >> rentCar.rentDuration;
+
+            strncpy(rentCar.status, "Rented", MAX_STRING_LENGTH);
+            writeData(data, pos, rentCar);
+            cout << "Car " << regNumber << " successfully rented!" << endl;
+            cin.ignore();
+            cin.get();
+        }
+        else if (rentCar.status == "Rented")
+        {
+            cout << "Car " << regNumber << " is already rented!" << endl;
+            cin.get();
+        }
+    }
+    else
+    {
+        cout << "Car not found!" << endl;
+        cin.get();
+        return;
+    }
+}
+
+void returnCar(fstream &data)
+{
+    system("cls");
+    int size = getDataSize(data);
+
+    cout << "[Return Car]" << endl;
+    char regNumber[MAX_STRING_LENGTH];
+    cout << "Registration Number: ";
+    cin >> regNumber;
+    toUpper(regNumber);
+
+    int pos = findPos(data, regNumber);
+    CarRentData returnCar;
+
+    cin.ignore();
+    if (pos >= 0)
+    {
+        returnCar = readData(data, pos);
+        if (returnCar.status == "Not Rented")
+        {
+            cout << "Car " << regNumber << " is not rented!" << endl;
+            cin.get();
+            return;
+        }
+    }
+    else
+    {
+        cout << "Car not found!" << endl;
+        cin.get();
+        return;
+    }
+
+    int customerId;
+    cout << "Customer Id: ";
+    cin >> customerId;
+
+    cin.ignore();
+    if (returnCar.customerId == customerId)
+    {
+        strncpy(returnCar.status, "Not Rented", MAX_STRING_LENGTH);
+        writeData(data, pos, returnCar);
+        cout << "Car " << regNumber << " has been returned!" << endl;
+
+        cin.get();
+    }
+    else
+    {
+        cout << "Invalid customer id!" << endl;
+        cin.get();
+        return;
+    }
+}
+
 int getChoice()
 {
     cout << "[Car Rent Services]" << endl;
@@ -139,7 +303,7 @@ int getChoice()
 
 void checkDatabase(fstream &data)
 {
-    data.open(dataFileName, ios::out | ios::in | ios::binary);
+    data.open(CARS_DATA_FILE, ios::out | ios::in | ios::binary);
     if (data.is_open())
     {
         cout << "database ditemukan" << endl;
@@ -148,7 +312,7 @@ void checkDatabase(fstream &data)
     {
         cout << "database tidak ditemukan, membuat database baru!" << endl;
         data.close();
-        data.open(dataFileName, ios::trunc | ios::out | ios::in | ios::binary);
+        data.open(CARS_DATA_FILE, ios::trunc | ios::out | ios::in | ios::binary);
     }
 }
 
@@ -171,6 +335,15 @@ int main()
             break;
         case 2:
             addCarList(data);
+            break;
+        case 3:
+            removeCarList(data);
+            break;
+        case 4:
+            rentCar(data);
+            break;
+        case 5:
+            returnCar(data);
             break;
         }
     }
