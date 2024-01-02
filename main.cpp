@@ -12,6 +12,7 @@ using namespace std;
 #define RENT_DATA_FILE "rent-data.bin"
 
 const int MAX_STRING_LENGTH = 50;
+const float penaltyPercentage = 1.25f;
 struct CarRentData
 {
     char regNumber[MAX_STRING_LENGTH];
@@ -397,36 +398,68 @@ void returnCar(fstream &data)
     if (returnCar.customerId == customerId)
     {
         char confirm;
-        cout << "Are you sure you want to return this car? (y/n) ";
-        cin >> confirm;
-        cin.ignore(static_cast<unsigned int>(numeric_limits<streamsize>::max()), '\n');
-        while (true)
+        time_t now = time(0);
+
+        int actualRentDuration = difftime(now, returnCar.rentDate) / (60 * 60 * 24);
+        int penaltyFee = (actualRentDuration - returnCar.rentDuration) * penaltyPercentage;
+
+        makeInvoice(data, returnCar, "return", now);
+        if (penaltyFee > 0)
         {
-            if (confirm == 'Y' || confirm == 'y')
+            while (true)
             {
-                strncpy(returnCar.status, "Not Rented", MAX_STRING_LENGTH);
-                writeData(data, pos, returnCar);
-                time_t now = time(0);
-                makeInvoice(data, returnCar, "return", now);
-                cout << "Car " << regNumber << " has been returned!" << endl;
-                cin.get();
-                return;
-            }
-            else if (confirm == 'N' || confirm == 'n')
-            {
-                cout << "Return cancelled!" << endl;
-                cin.get();
-                return;
-            }
-            else
-            {
-                cout << "Invalid input!" << endl;
-                cout << "(ESC to back to main menu)" << endl;
-                cin.ignore();
-                if (_getch() == 27)
-                    return;
+                cout << "Penalty fee: Rp" << penaltyFee << endl;
+                int payment;
+                cout << "Payment: ";
+                cin >> payment;
+                if (payment >= penaltyFee)
+                {
+                    int refund = payment - penaltyFee;
+                    cout << "Refund: Rp" << refund << endl;
+                    break;
+                }
+                else
+                {
+                    cout << "The amount paid is less than the penalty fee!" << endl;
+                    cout << "(ESC to back to main menu)" << endl;
+                    cin.ignore();
+                    makeInvoice(data, returnCar, "return", now);
+                    if (_getch() == 27)
+                        return;
+                }
             }
         }
+        else
+        {
+            while (true)
+            {
+                cout << "Penalty fee: Rp0" << endl;
+                cout << "Are you sure you want to return this car? (y/n) ";
+                cin >> confirm;
+                if (confirm == 'Y' || confirm == 'y')
+                {
+                    break;
+                }
+                else if (confirm == 'N' || confirm == 'n')
+                {
+                    return;
+                }
+                else
+                {
+                    cout << "Invalid input!" << endl;
+                    cout << "(ESC to back to main menu)" << endl;
+                    cin.ignore();
+                    makeInvoice(data, returnCar, "return", now);
+                    if (_getch() == 27)
+                        return;
+                }
+            }
+        }
+        strncpy(returnCar.status, "Not Rented", MAX_STRING_LENGTH);
+        writeData(data, pos, returnCar);
+        cout << "================== THANK YOU! ==================" << endl;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cin.get();
     }
     else
     {
@@ -498,8 +531,10 @@ void editCarList(fstream &data)
             newCar.rentDate = showCar.rentDate;
 
             writeData(data, pos, newCar);
-            cout << "Car " << regNumber << " successfully updated!" << endl; 
-        } else {
+            cout << "Car " << regNumber << " successfully updated!" << endl;
+        }
+        else
+        {
             cout << "Cannot change the data of active rented car!" << endl;
         }
     }
