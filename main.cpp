@@ -410,12 +410,12 @@ void returnCar(fstream &data)
             {
                 cout << "Penalty fee: Rp" << penaltyFee << endl;
                 int payment;
-                cout << "Payment: ";
+                cout << "Payment\t: ";
                 cin >> payment;
                 if (payment >= penaltyFee)
                 {
                     int refund = payment - penaltyFee;
-                    cout << "Refund: Rp" << refund << endl;
+                    cout << "Refund\t: Rp" << refund << endl;
                     break;
                 }
                 else
@@ -433,8 +433,8 @@ void returnCar(fstream &data)
         {
             while (true)
             {
-                cout << "Penalty fee: Rp0" << endl;
-                cout << "Are you sure you want to return this car? (y/n) ";
+                cout << "Penalty fee\t: Rp0" << endl;
+                cout << "Are you sure you want to return this car? (y/n) :";
                 cin >> confirm;
                 if (confirm == 'Y' || confirm == 'y')
                 {
