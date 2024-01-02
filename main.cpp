@@ -286,14 +286,83 @@ void returnCar(fstream &data)
     }
 }
 
+void editCarList(fstream &data)
+{
+    system("cls");
+    int size = getDataSize(data);
+
+    cout << "[Edit Car]" << endl;
+    cout << "Registration Number: ";
+    char regNumber[MAX_STRING_LENGTH];
+    cin >> regNumber;
+    toUpper(regNumber);
+
+    int pos = findPos(data, regNumber);
+    if (pos >= 0)
+    {
+        system("cls");
+
+        CarRentData showCar = readData(data, pos);
+        cout << "[Car Data]" << endl;
+        cout << "- Registration Number: " << showCar.regNumber << endl;
+        cout << "- Brand: " << showCar.brand << endl;
+        cout << "- Model: " << showCar.model << endl;
+        cout << "- Year: " << showCar.year << endl;
+        cout << "- Rent Fee (/day): " << showCar.rentFee << endl;
+        cout << "- Status: " << showCar.status << endl;
+
+        cin.get();
+        CarRentData newCar;
+        cout << "\n[New Car Data]" << endl;
+        cout << "(leave empty if you don't want to change)" << endl;
+        cout << "- Registration Number: ";
+        cin.getline(newCar.regNumber, MAX_STRING_LENGTH);
+        if (strlen(newCar.regNumber) == 0)
+            strcpy(newCar.regNumber, showCar.regNumber);
+
+        cout << "- Brand: ";
+        cin.getline(newCar.brand, MAX_STRING_LENGTH);
+        if (strlen(newCar.brand) == 0)
+            strcpy(newCar.brand, showCar.brand);
+
+        cout << "- Model: ";
+        cin.getline(newCar.model, MAX_STRING_LENGTH);
+        if (strlen(newCar.model) == 0)
+            strcpy(newCar.model, showCar.model);
+
+        char buffer[MAX_STRING_LENGTH];
+        cout << "- Year: ";
+        cin.getline(buffer, MAX_STRING_LENGTH);
+        newCar.year = (strlen(buffer) == 0) ? showCar.year : (int)atoi(buffer);
+
+        cout << "- Rent Fee (/day): ";
+        cin.getline(buffer, MAX_STRING_LENGTH);
+        newCar.rentFee = (strlen(buffer) == 0) ? showCar.rentFee : (int)atoi(buffer);
+
+        strncpy(newCar.status, showCar.status, MAX_STRING_LENGTH);
+        newCar.customerId = showCar.customerId;
+        strncpy(newCar.customerName, showCar.customerName, MAX_STRING_LENGTH);
+        newCar.rentDuration = showCar.rentDuration;
+
+        writeData(data, pos, newCar);
+        cout << "Car " << regNumber << " successfully updated!" << endl;
+    }
+    else
+    {
+        cout << "Car not found!" << endl;
+    }
+    cin.get();
+}
+
 int getChoice()
 {
     cout << "[Car Rent Services]" << endl;
     cout << "1. Show Car List" << endl;
     cout << "2. Add Car List" << endl;
-    cout << "3. Remove Car On List" << endl;
-    cout << "4. Rent Car" << endl;
-    cout << "5. Return Car" << endl;
+    cout << "3. Edit car" << endl;
+    cout << "4. Remove Car On List" << endl;
+    cout << "5. Rent Car" << endl;
+    cout << "6. Return Car" << endl;
     cout << "Choose menu (0 to exit): ";
     int input;
     cin >> input;
@@ -337,12 +406,15 @@ int main()
             addCarList(data);
             break;
         case 3:
-            removeCarList(data);
+            editCarList(data);
             break;
         case 4:
-            rentCar(data);
+            removeCarList(data);
             break;
         case 5:
+            rentCar(data);
+            break;
+        case 6:
             returnCar(data);
             break;
         }
