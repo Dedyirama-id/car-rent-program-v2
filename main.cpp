@@ -10,7 +10,6 @@ using namespace std;
 #define RENT_DATA_FILE "rent-data.bin"
 
 const int MAX_STRING_LENGTH = 50;
-
 struct CarRentData
 {
     char regNumber[MAX_STRING_LENGTH];
@@ -23,6 +22,61 @@ struct CarRentData
     char customerName[MAX_STRING_LENGTH];
     int rentDuration;
 };
+
+CarRentData readData(fstream &data, int posisi);
+void toUpper(char *str);
+void capitalize(char *str);
+void writeData(fstream &data, int posisi, CarRentData &inputCar);
+int getDataSize(fstream &data);
+void showCarList(fstream &data);
+void addCarList(fstream &data);
+void removeCarList(fstream &data);
+int findPos(fstream &data, char regNumber[]);
+void rentCar(fstream &data);
+void returnCar(fstream &data);
+void editCarList(fstream &data);
+int getChoice();
+void checkDatabase(fstream &data);
+
+int main()
+{
+    fstream data;
+    checkDatabase(data);
+
+    while (true)
+    {
+        system("cls");
+        int choice = getChoice();
+        switch (choice)
+        {
+        case 0:
+            cout << "Exit" << endl;
+            return 0;
+        case 1:
+            showCarList(data);
+            break;
+        case 2:
+            addCarList(data);
+            break;
+        case 3:
+            editCarList(data);
+            break;
+        case 4:
+            removeCarList(data);
+            break;
+        case 5:
+            rentCar(data);
+            break;
+        case 6:
+            returnCar(data);
+            break;
+        }
+    }
+
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin.get();
+    return 0;
+}
 
 void toUpper(char *str)
 {
@@ -380,44 +434,4 @@ void checkDatabase(fstream &data)
         data.close();
         data.open(CARS_DATA_FILE, ios::trunc | ios::out | ios::in | ios::binary);
     }
-}
-
-int main()
-{
-    fstream data;
-    checkDatabase(data);
-
-    while (true)
-    {
-        system("cls");
-        int choice = getChoice();
-        switch (choice)
-        {
-        case 0:
-            cout << "Exit" << endl;
-            return 0;
-        case 1:
-            showCarList(data);
-            break;
-        case 2:
-            addCarList(data);
-            break;
-        case 3:
-            editCarList(data);
-            break;
-        case 4:
-            removeCarList(data);
-            break;
-        case 5:
-            rentCar(data);
-            break;
-        case 6:
-            returnCar(data);
-            break;
-        }
-    }
-
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    cin.get();
-    return 0;
 }
