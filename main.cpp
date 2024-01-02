@@ -134,6 +134,16 @@ void addCarList(fstream &data)
     cout << "Reg. Number\t: ";
     cin >> newCar.regNumber;
     toUpper(newCar.regNumber);
+    
+    int pos = findPos(data, newCar.regNumber);
+    if (pos >= 0)
+    {
+        cout << RED << ITALIC << "Car already exists!" << RESET << endl;
+        cin.ignore();
+        cin.get();
+        return;
+    }
+
     cin.ignore();
     cout << "Brand\t\t: ";
     cin.getline(newCar.brand, MAX_STRING_LENGTH);
