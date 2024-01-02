@@ -10,6 +10,7 @@ using namespace std;
 
 #define CARS_DATA_FILE "cars-data.bin"
 #define RENT_DATA_FILE "rent-data.bin"
+#define HISTORY_FILE "history.bin"
 
 const int MAX_STRING_LENGTH = 50;
 const float penaltyPercentage = 1.25f;
@@ -40,6 +41,7 @@ void rentCar(fstream &data);
 void returnCar(fstream &data);
 void editCarList(fstream &data);
 void makeInvoice(fstream &data, CarRentData &car, string mode, time_t returnDate = 0);
+void updateHistory(CarRentData &car, char time[], string action);
 int getChoice();
 void checkDatabase(fstream &data);
 
@@ -341,6 +343,11 @@ void rentCar(fstream &data)
             writeData(data, pos, rentCar);
             cout << "================== THANK YOU! ==================" << endl;
 
+            tm *rentDate = localtime(&rentCar.rentDate);
+            char sRentDate[80];
+            strftime(sRentDate, sizeof(sRentDate), "%Y-%m-%d %H:%M:%S", rentDate);
+
+            updateHistory(rentCar, sRentDate, "rent");
             cin.ignore();
             cin.get();
         }
@@ -394,11 +401,15 @@ void returnCar(fstream &data)
     cout << "Customer Id: ";
     cin >> customerId;
 
+    char confirm;
+    time_t now = time(0);
+    tm *returnDate = localtime(&now);
+    char sReturnDate[80];
+    strftime(sReturnDate, sizeof(sReturnDate), "%Y-%m-%d %H:%M:%S", returnDate);
+
     cin.ignore();
     if (returnCar.customerId == customerId)
     {
-        char confirm;
-        time_t now = time(0);
 
         int actualRentDuration = difftime(now, returnCar.rentDate) / (60 * 60 * 24);
         int penaltyFee = (actualRentDuration - returnCar.rentDuration) * penaltyPercentage;
@@ -434,7 +445,7 @@ void returnCar(fstream &data)
             while (true)
             {
                 cout << "Penalty fee\t: Rp0" << endl;
-                cout << "Are you sure you want to return this car? (y/n) :";
+                cout << "Are you sure you want to return this car? (y/n): ";
                 cin >> confirm;
                 if (confirm == 'Y' || confirm == 'y')
                 {
@@ -458,6 +469,8 @@ void returnCar(fstream &data)
         strncpy(returnCar.status, "Not Rented", MAX_STRING_LENGTH);
         writeData(data, pos, returnCar);
         cout << "================== THANK YOU! ==================" << endl;
+
+        updateHistory(returnCar, sReturnDate, "return");
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         cin.get();
     }
@@ -560,6 +573,17 @@ int getChoice()
     cin >> input;
     cin.ignore();
     return input;
+}
+
+void updateHistory (CarRentData &car, char time[], string action) {
+    ofstream history;
+    history.open(HISTORY_FILE, ios::out | ios::app);
+    if (!history.is_open()) {
+        history.close();
+        history.open(HISTORY_FILE, ios::trunc | ios::out | ios::app);
+    }
+
+    history << time << '\t' << action << '\t' << car.regNumber << '\t' << car.customerName << '\t' << car.customerId << endl;
 }
 
 void checkDatabase(fstream &data)
