@@ -3,6 +3,8 @@
 #include <string>
 #include <limits>
 #include <cstring>
+#include <conio.h>
+#include <ctime>
 
 using namespace std;
 
@@ -21,6 +23,7 @@ struct CarRentData
     int customerId;
     char customerName[MAX_STRING_LENGTH];
     int rentDuration;
+    time_t rentDate;
 };
 
 CarRentData readData(fstream &data, int posisi);
@@ -35,6 +38,7 @@ int findPos(fstream &data, char regNumber[]);
 void rentCar(fstream &data);
 void returnCar(fstream &data);
 void editCarList(fstream &data);
+void makeInvoice(fstream &data, CarRentData &car, string mode, time_t returnDate = 0);
 int getChoice();
 void checkDatabase(fstream &data);
 
@@ -167,6 +171,7 @@ void addCarList(fstream &data)
     newCar.customerId = 0;
     strncpy(newCar.customerName, "-", MAX_STRING_LENGTH);
     newCar.rentDuration = 0;
+    newCar.rentDate = 0;
 
     writeData(data, size + 1, newCar);
     cout << "Car added successfully!" << endl;
@@ -238,6 +243,46 @@ int findPos(fstream &data, char regNumber[])
     return -1;
 }
 
+void makeInvoice(fstream &data, CarRentData &car, string mode, time_t returnDate)
+{
+    system("cls");
+    if (mode == "rent")
+    {
+        cout << "================================================" << endl;
+        cout << "                CAR RENT INVOICE                " << endl;
+        cout << "================================================" << endl;
+        cout << "Customer\t: " << car.customerName << endl;
+        cout << "Customer ID\t: " << car.customerId << endl;
+        cout << "Reg. Number\t: " << car.regNumber << endl;
+        cout << "Brand\t\t: " << car.brand << endl;
+        cout << "Model\t\t: " << car.model << endl;
+        cout << "Rent Fee\t: Rp" << car.rentFee << " /day" << endl;
+        cout << "Rent Duration\t: " << car.rentDuration << " days" << endl;
+        cout << "================================================" << endl;
+    }
+    else if (mode == "return")
+    {
+        tm *rentDate = localtime(&car.rentDate);
+        char sRentDate[80];
+        strftime(sRentDate, sizeof(sRentDate), "%Y-%m-%d %H:%M:%S", rentDate);
+
+        char sReturnDate[80];
+        strftime(sReturnDate, sizeof(sReturnDate), "%Y-%m-%d %H:%M:%S", localtime(&returnDate));
+
+        cout << "================================================" << endl;
+        cout << "                CAR RETURN INVOICE               " << endl;
+        cout << "================================================" << endl;
+        cout << "Customer\t: " << car.customerName << endl;
+        cout << "Customer ID\t: " << car.customerId << endl;
+        cout << "Reg. Number\t: " << car.regNumber << endl;
+        cout << "Brand\t\t: " << car.brand << endl;
+        cout << "Model\t\t: " << car.model << endl;
+        cout << "Rent Date\t: " << sRentDate << endl;
+        cout << "Return Date\t: " << sReturnDate << endl;
+        cout << "================================================" << endl;
+    }
+}
+
 void rentCar(fstream &data)
 {
     system("cls");
@@ -246,7 +291,7 @@ void rentCar(fstream &data)
 
     cout << "[Rent Car]" << endl;
     char regNumber[MAX_STRING_LENGTH];
-    cout << "Registration Number: ";
+    cout << "Registration Number\t: ";
     cin >> regNumber;
     toUpper(regNumber);
 
@@ -257,16 +302,44 @@ void rentCar(fstream &data)
         rentCar = readData(data, pos);
         if (strcmp(rentCar.status, "Not Rented") == 0)
         {
-            cout << "Customer Id: ";
+            cout << "Customer Id \t\t: ";
             cin >> rentCar.customerId;
-            cout << "Customer Name: ";
+            cout << "Customer Name \t\t: ";
             cin >> rentCar.customerName;
-            cout << "Rent Duration (days): ";
+            capitalize(rentCar.customerName);
+            cout << "Rent Duration (days) \t: ";
             cin >> rentCar.rentDuration;
 
+            int fee = rentCar.rentDuration * rentCar.rentFee;
+            int pay;
+            while (true)
+            {
+                makeInvoice(data, rentCar, "rent");
+                cout << "Total Fee \t: Rp" << fee << endl;
+                cout << "Payment \t: Rp";
+                cin >> pay;
+                if (pay >= fee)
+                {
+                    break;
+                }
+                else
+                {
+                    cout << "The amount paid is less than the total fee!" << endl;
+                    cout << "(ESC to back to main menu)" << endl;
+                    cin.ignore();
+                    if (_getch() == 27)
+                        return;
+                }
+            }
+
+            int refund = pay - fee;
+            cout << "Refund \t\t: Rp" << refund << endl;
+
             strncpy(rentCar.status, "Rented", MAX_STRING_LENGTH);
+            rentCar.rentDate = time(0);
             writeData(data, pos, rentCar);
-            cout << "Car " << regNumber << " successfully rented!" << endl;
+            cout << "================== THANK YOU! ==================" << endl;
+
             cin.ignore();
             cin.get();
         }
@@ -323,11 +396,37 @@ void returnCar(fstream &data)
     cin.ignore();
     if (returnCar.customerId == customerId)
     {
-        strncpy(returnCar.status, "Not Rented", MAX_STRING_LENGTH);
-        writeData(data, pos, returnCar);
-        cout << "Car " << regNumber << " has been returned!" << endl;
-
-        cin.get();
+        char confirm;
+        cout << "Are you sure you want to return this car? (y/n) ";
+        cin >> confirm;
+        cin.ignore(static_cast<unsigned int>(numeric_limits<streamsize>::max()), '\n');
+        while (true)
+        {
+            if (confirm == 'Y' || confirm == 'y')
+            {
+                strncpy(returnCar.status, "Not Rented", MAX_STRING_LENGTH);
+                writeData(data, pos, returnCar);
+                time_t now = time(0);
+                makeInvoice(data, returnCar, "return", now);
+                cout << "Car " << regNumber << " has been returned!" << endl;
+                cin.get();
+                return;
+            }
+            else if (confirm == 'N' || confirm == 'n')
+            {
+                cout << "Return cancelled!" << endl;
+                cin.get();
+                return;
+            }
+            else
+            {
+                cout << "Invalid input!" << endl;
+                cout << "(ESC to back to main menu)" << endl;
+                cin.ignore();
+                if (_getch() == 27)
+                    return;
+            }
+        }
     }
     else
     {
@@ -394,6 +493,7 @@ void editCarList(fstream &data)
         newCar.customerId = showCar.customerId;
         strncpy(newCar.customerName, showCar.customerName, MAX_STRING_LENGTH);
         newCar.rentDuration = showCar.rentDuration;
+        newCar.rentDate = showCar.rentDate;
 
         writeData(data, pos, newCar);
         cout << "Car " << regNumber << " successfully updated!" << endl;
